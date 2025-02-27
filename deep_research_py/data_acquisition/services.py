@@ -156,9 +156,6 @@ class Firecrawl:
             return {"data": []}
 
 
-print(os.getenv("DEFAULT_SCRAPER", "playwright_ddgs"))
-
-
 # Initialize a global instance with the default settings
 search_service = SearchService(
     service_type=os.getenv("DEFAULT_SCRAPER", "playwright_ddgs")
