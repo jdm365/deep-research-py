@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import List, Dict, Any
 from deep_research_py.utils import logger
 from abc import ABC, abstractmethod
+from duckduckgo_search import DDGS
 
 
 # ---- Data Models ----
@@ -37,15 +38,7 @@ class DdgsSearchEngine:
     """DuckDuckGo search engine implementation."""
 
     def __init__(self):
-        try:
-            from duckduckgo_search import DDGS
-
-            self.ddgs = DDGS()
-        except ImportError:
-            logger.error(
-                "Please install duckduckgo_search package: pip install duckduckgo_search"
-            )
-            raise
+        self.ddgs = DDGS()
 
     async def search(
         self, query: str, num_results: int = 10, **kwargs

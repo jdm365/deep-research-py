@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Dict, Any
 from deep_research_py.utils import logger
 from abc import ABC, abstractmethod
+from playwright.async_api import async_playwright
 
 # ---- Data Models ----
 
@@ -50,22 +51,16 @@ class PlaywrightScraper:
 
     async def setup(self):
         """Initialize Playwright browser and context."""
-        try:
-            from playwright.async_api import async_playwright
 
-            self.playwright = await async_playwright().start()
+        self.playwright = await async_playwright().start()
 
-            browser_method = getattr(self.playwright, self.browser_type)
-            self.browser = await browser_method.launch(headless=self.headless)
-            self.context = await self.browser.new_context()
+        browser_method = getattr(self.playwright, self.browser_type)
+        self.browser = await browser_method.launch(headless=self.headless)
+        self.context = await self.browser.new_context()
 
-            logger.info(
-                f"Playwright {self.browser_type} browser initialized in {'headless' if self.headless else 'headed'} mode"
-            )
-        except ImportError:
-            logger.error("Please install playwright package: pip install playwright")
-            logger.error("Then install browsers: playwright install")
-            raise
+        logger.info(
+            f"Playwright {self.browser_type} browser initialized in {'headless' if self.headless else 'headed'} mode"
+        )
 
     async def teardown(self):
         """Clean up Playwright resources."""
