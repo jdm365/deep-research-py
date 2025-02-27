@@ -67,9 +67,9 @@ async def process_serp_result(
     """Process search results to extract learnings and follow-up questions."""
 
     contents = [
-        trim_prompt(item.get("markdown", ""), 25_000)
+        trim_prompt(item.get("content", ""), 25_000)
         for item in search_result["data"]
-        if item.get("markdown")
+        if item.get("content")
     ]
 
     # Create the contents string separately
