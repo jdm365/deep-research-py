@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Dict, Optional, Any, List, TypedDict
 import os
+import json
 import asyncio
 from deep_research_py.utils import logger
 from firecrawl import FirecrawlApp
@@ -58,7 +59,9 @@ class SearchService:
             await self.manager.teardown()
             self._initialized = False
 
-    async def search(self, query: str, limit: int = 5, **kwargs) -> Dict[str, Any]:
+    async def search(
+        self, query: str, limit: int = 5, save_content: bool = False, **kwargs
+    ) -> Dict[str, Any]:
         """Search using the configured service.
 
         Returns data in a format compatible with the Firecrawl response format.
@@ -67,19 +70,15 @@ class SearchService:
 
         try:
             if self.service_type == SearchServiceType.FIRECRAWL.value:
-                return await self.firecrawl.search(query, limit=limit, **kwargs)
+                response = await self.firecrawl.search(query, limit=limit, **kwargs)
             else:
-                search_results = await self.manager.search(
-                    query, num_results=limit, **kwargs
-                )
-
                 scraped_data = await self.manager.search_and_scrape(
                     query, num_results=limit, scrape_all=True, **kwargs
                 )
 
                 # Format the response to match Firecrawl format
                 formatted_data = []
-                for result in search_results:
+                for result in scraped_data["search_results"]:
                     item = {
                         "url": result.url,
                         "title": result.title,
@@ -93,7 +92,28 @@ class SearchService:
 
                     formatted_data.append(item)
 
-                return {"data": formatted_data}
+                response = {"data": formatted_data}
+
+            if save_content:
+                # Create the directory if it doesn't exist
+                os.makedirs("scraped_content", exist_ok=True)
+
+                # Save each result as a separate JSON file
+                for item in response.get("data", []):
+                    # Create a safe filename from the first 50 chars of the title
+                    title = item.get("title", "untitled")
+                    safe_filename = "".join(
+                        c for c in title[:50] if c.isalnum() or c in " ._-"
+                    ).strip()
+                    safe_filename = safe_filename.replace(" ", "_")
+
+                    # Save the content to a JSON file
+                    with open(
+                        f"scraped_content/{safe_filename}.json", "w", encoding="utf-8"
+                    ) as f:
+                        json.dump(item, f, ensure_ascii=False, indent=2)
+
+            return response
 
         except Exception as e:
             logger.error(f"Error during search: {str(e)}")
