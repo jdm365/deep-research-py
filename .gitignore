@@ -6,8 +6,6 @@ __pycache__/
 # C extensions
 *.so
 
-output.md
-
 # Distribution / packaging
 .Python
 build/
@@ -173,3 +171,7 @@ cython_debug/
 .pypirc
 
 .env
+
+# Output file and subjective test file
+output.md
+test.ipynb
