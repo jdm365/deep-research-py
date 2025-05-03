@@ -5,7 +5,39 @@ import json
 import asyncio
 from deep_research_py.utils import logger
 from firecrawl import FirecrawlApp
-from .manager import SearchAndScrapeManager
+from deep_research_py.data_acquisition.manager import SearchAndScrapeManager
+from time import sleep
+
+from duckduckgo_search import DDGS
+
+
+class DuckDuckGoService:
+    """DuckDuckGo search service."""
+
+    def __init__(self, region: str = "us-en"):
+        self.region = region
+
+    def search(self, query: str, limit: int = 5) -> List[Dict[str, str]]:
+        """Perform a search using DuckDuckGo."""
+
+        results = []
+        with DDGS() as ddgs:
+            sleep(2)  # Rate limit to avoid being blocked
+            for result in ddgs.text(
+                query,
+                backend="lite",
+                region=self.region,
+                timelimit="y",
+                max_results=limit,
+            ):
+                results.append(
+                    {
+                        "url": result.get("href"),
+                        "title": result.get("title"),
+                        "content": result.get("body"),
+                    }
+                )
+        return results
 
 
 class SearchServiceType(Enum):

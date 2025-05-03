@@ -1,8 +1,8 @@
 import asyncio
 from typing import List, Dict, Union
 from deep_research_py.utils import logger
-from .search import SearchResult, SearchEngine, DdgsSearchEngine
-from .scraper import ScrapedContent, Scraper, PlaywrightScraper
+from deep_research_py.data_acquisition.search import SearchResult, SearchEngine, DdgsSearchEngine
+from deep_research_py.data_acquisition.scraper import ScrapedContent, Scraper, PlaywrightScraper
 
 
 class SearchAndScrapeManager:

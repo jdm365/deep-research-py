@@ -6,7 +6,7 @@ import tiktoken
 from typing import Optional
 from rich.console import Console
 from dotenv import load_dotenv
-from .text_splitter import RecursiveCharacterTextSplitter
+from deep_research_py.ai.text_splitter import RecursiveCharacterTextSplitter
 from deep_research_py.config import EnvironmentConfig
 
 load_dotenv()
