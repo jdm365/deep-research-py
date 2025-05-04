@@ -140,8 +140,8 @@ def get_predicted_facilities_local(
     )
 
     user_prompt = (
-        f"Given the following facility provided by the user, provide at least 10 nearby facilities "
-        f"which likely supply them materials. Return JSON objects with a 'facilities' array field"
+        f"Given the following facility provided by the user, provide at least 10 specific nearby facilities "
+        f"which likely supply them materials they use to make their products. Return JSON objects with a 'facilities' array field"
         f"containing objects with fields 'name', 'address', 'materials', 'transportation method', and 'evidence/rationale'."
 
         f"from research:\n\n<prompt>{prompt}</prompt>\n\n"
