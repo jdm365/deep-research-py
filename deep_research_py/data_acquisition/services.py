@@ -11,32 +11,45 @@ from time import sleep
 from duckduckgo_search import DDGS
 
 
+SLEEP_TIME = 30
+
+
 class DuckDuckGoService:
     """DuckDuckGo search service."""
 
     def __init__(self, region: str = "us-en"):
         self.region = region
 
-    def search(self, query: str, limit: int = 5) -> List[Dict[str, str]]:
+    def search(self, query: str, limit: int = 5, attempt_number: int = 0) -> List[Dict[str, str]]:
         """Perform a search using DuckDuckGo."""
 
         results = []
-        with DDGS() as ddgs:
-            sleep(2)  # Rate limit to avoid being blocked
-            for result in ddgs.text(
-                query,
-                backend="lite",
-                region=self.region,
-                timelimit="y",
-                max_results=limit,
-            ):
-                results.append(
-                    {
-                        "url": result.get("href"),
-                        "title": result.get("title"),
-                        "content": result.get("body"),
-                    }
-                )
+        try:
+            with DDGS(proxy="tb") as ddgs:
+            ## with DDGS() as ddgs:
+                for result in ddgs.text(
+                    query,
+                    backend="lite",
+                    region=self.region,
+                    timelimit="y",
+                    max_results=limit,
+                ):
+                    results.append(
+                        {
+                            "url": result.get("href"),
+                            "title": result.get("title"),
+                            "content": result.get("body"),
+                        }
+                    )
+        except Exception as e:
+            if attempt_number >= 2:
+                logger.error(f"Error searching with DuckDuckGo: {e}")
+                return results
+
+            print(f"Rate limiting error. Sleeping for {SLEEP_TIME} seconds then trying again.")
+            sleep(SLEEP_TIME)
+            return self.search(query, limit, attempt_number + 1)
+
         return results
 
 

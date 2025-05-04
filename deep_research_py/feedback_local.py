@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 import json
 from deep_research_py.prompt import system_prompt
 from deep_research_py.ai.providers import get_client_response
@@ -7,7 +7,10 @@ from deep_research_py.deep_research import MODEL
 from deep_research_py.llm_query import Gemini, Ollama
 
 
-def generate_feedback(query: str) -> List[str]:
+def generate_feedback(
+        query: str,
+        client: Union[Gemini, Ollama],
+        ) -> List[str]:
     """Generates follow-up questions to clarify research direction."""
 
     '''
@@ -22,8 +25,6 @@ def generate_feedback(query: str) -> List[str]:
     },
     ], format='json', stream=False)
     '''
-    client = Gemini()
-
     try:
         ## return json.loads(response["message"].content).get("questions", [])
         return client.query_json(
@@ -39,7 +40,8 @@ def generate_feedback(query: str) -> List[str]:
 
 if __name__ == "__main__":
     query = "How does climate change affect marine biodiversity?"
-    questions = generate_feedback(query)
+    client = Ollama()
+    questions = generate_feedback(query, client)
     print("Generated Feedback:")
     for question in questions:
         print(question)

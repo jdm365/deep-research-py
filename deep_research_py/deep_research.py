@@ -1,4 +1,4 @@
-from typing import List, Dict, TypedDict, Optional
+from typing import List, Dict, TypedDict, Optional, Union
 from dataclasses import dataclass
 import asyncio
 import openai
@@ -29,6 +29,7 @@ class SerpQuery:
     research_goal: str
 
 def generate_serp_queries_local(
+    client: Union[Ollama, Gemini],
     query: str,
     num_queries: int = 3,
     learnings: Optional[List[str]] = None,
@@ -36,7 +37,7 @@ def generate_serp_queries_local(
     """Generate SERP queries based on user input and previous learnings."""
 
     ## prompt = f"""Given the following prompt from the user, generate a list of SERP queries to research the topic. Return a JSON object with a 'queries' array field containing {num_queries} queries (or less if the original prompt is clear). Each query object should have 'query' and 'research_goal' fields. Make sure each query is unique and not similar to each other: <prompt>{query}</prompt>"""
-    prompt = f"""Given the following facility from the user, generate a list of SERP queries to research the topic with the goal of finding likely suppliers, materials supplied, and transportation method. Return a JSON object with a 'queries' array field containing {num_queries} queries (or less if the original prompt is clear). Each query object should have 'query' and 'research_goal' fields. Make sure each query is unique and not similar to each other: <prompt>{query}</prompt>"""
+    prompt = f"""Given the following facility from the user, generate a list of SERP queries to research the topic with the goal of finding likely suppliers, materials supplied, and transportation method. First identify likely input materials to their products, then search nearby for facilities which manufacture or supply those materials. Return a JSON object with a 'queries' array field containing {num_queries} queries (or less if the original prompt is clear). Each query object should have 'query' and 'research_goal' fields. Make sure each query is unique and not similar to each other: <prompt>{query}</prompt>"""
 
     if learnings:
         prompt += f"\n\nHere are some learnings from previous research, use them to generate more specific queries: {' '.join(learnings)}"
@@ -55,7 +56,6 @@ def generate_serp_queries_local(
     queries = json.loads(response).get("queries", [])
     '''
 
-    client = Gemini()
     queries = client.query_json(
             user_prompt=prompt,
             system_prompt=system_prompt(),
@@ -75,6 +75,7 @@ def generate_serp_queries_local(
 
 
 def process_serp_result_local(
+    client: Union[Ollama, Gemini],
     query: str,
     search_result: List[Dict[str, str]],
     num_learnings: int = 2,
@@ -112,7 +113,6 @@ def process_serp_result_local(
     )["message"].content)
     '''
 
-    client = Gemini()
     response = client.query_json(
             user_prompt=prompt,
             system_prompt=system_prompt(),
@@ -127,10 +127,10 @@ def process_serp_result_local(
     }
 
 def get_predicted_facilities_local(
+    client: Union[Ollama, Gemini],
     prompt: str,
     learnings: List[str],
     visited_urls: List[str],
-    client: openai.OpenAI,
 ) -> str:
     """Generate final report based on all research learnings."""
 
@@ -160,9 +160,8 @@ def get_predicted_facilities_local(
     )["message"].content)
     '''
 
-    client = Gemini()
     response = client.query_json(
-            user_prompt=prompt,
+            user_prompt=user_prompt,
             system_prompt=system_prompt(),
             stream=False,
             )
@@ -177,10 +176,10 @@ def get_predicted_facilities_local(
         return "Error generating report"
 
 def write_final_report_local(
+    client: Union[Ollama, Gemini],
     prompt: str,
     learnings: List[str],
     visited_urls: List[str],
-    client: openai.OpenAI,
 ) -> str:
     """Generate final report based on all research learnings."""
 
@@ -209,7 +208,6 @@ def write_final_report_local(
     )["message"].content)
     '''
 
-    client = Gemini()
     response = client.query_json(
             user_prompt=prompt,
             system_prompt=system_prompt(),
@@ -231,6 +229,8 @@ def write_final_report_local(
 
 
 def deep_research_local(
+    gemini_client: Gemini,
+    ollama_client: Ollama,
     query: str,
     breadth: int,
     depth: int,
@@ -249,6 +249,7 @@ def deep_research_local(
     """
     # Generate search queries
     serp_queries = generate_serp_queries_local(
+        client=ollama_client,
         query=query,
         num_queries=breadth,
         learnings=learnings,
@@ -270,6 +271,7 @@ def deep_research_local(
 
         # Process the search results
         new_learnings = process_serp_result_local(
+            client=ollama_client,
             query=serp_query.query,
             search_result=result,
             num_follow_up_questions=new_breadth,
@@ -290,6 +292,8 @@ def deep_research_local(
             """.strip()
 
             return deep_research_local(
+                gemini_client=gemini_client,
+                ollama_client=ollama_client,
                 query=next_query,
                 breadth=new_breadth,
                 depth=new_depth,
@@ -328,9 +332,15 @@ if __name__ == "__main__":
         print(f"Query: {serp_query.query}, Research Goal: {serp_query.research_goal}")
     '''
 
+    gemini_client = Gemini()
+    ## ollama_client = Ollama(model="gemma3:12b")
+    ollama_client = Ollama(model="qwen3:14b")
+
     # Example usage of deep_research
-    depth = 3
+    depth = 2
     results = deep_research_local(
+        gemini_client=gemini_client,
+        ollama_client=ollama_client,
         query=query,
         breadth=breadth,
         depth=depth,
@@ -355,10 +365,10 @@ if __name__ == "__main__":
 
     # Example usage of get_predicted_facilities
     predicted_facilities = get_predicted_facilities_local(
+        client=gemini_client,
         prompt=query,
         learnings=results["learnings"],
         visited_urls=results["visited_urls"],
-        client=None,
     )
     print("Predicted Facilities:")
     for fac in predicted_facilities:
